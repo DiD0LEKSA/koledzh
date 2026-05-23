@@ -1,0 +1,169 @@
+Order - 15
+OrderLine - 25
+
+Short text для кожного різне
+
+USE Test;
+GO
+
+IF OBJECT_ID('dbo.OrderLine', 'U') IS NOT NULL DROP TABLE dbo.OrderLine;
+IF OBJECT_ID('dbo.ShoppingCartItem', 'U') IS NOT NULL DROP TABLE dbo.ShoppingCartItem;
+IF OBJECT_ID('dbo.ShoppingCart', 'U') IS NOT NULL DROP TABLE dbo.ShoppingCart;
+IF OBJECT_ID('dbo.Orders', 'U') IS NOT NULL DROP TABLE dbo.Orders;
+IF OBJECT_ID('dbo.OrderStatus', 'U') IS NOT NULL DROP TABLE dbo.OrderStatus;
+IF OBJECT_ID('dbo.Product', 'U') IS NOT NULL DROP TABLE dbo.Product;
+IF OBJECT_ID('dbo.Customer', 'U') IS NOT NULL DROP TABLE dbo.Customer;
+GO
+
+CREATE TABLE dbo.Customer (
+    CustomerID int IDENTITY(1,1) NOT NULL,
+    FullName nvarchar(100) NOT NULL,
+    Email nvarchar(100) NOT NULL,
+    Address nvarchar(200) NOT NULL,
+    Phone nvarchar(50) NOT NULL,
+    CONSTRAINT PK_Customer PRIMARY KEY (CustomerID),
+    CONSTRAINT CK_Customer_Email CHECK (Email LIKE '%@%')
+);
+
+CREATE TABLE dbo.Product (
+    ProductID int IDENTITY(101,1) NOT NULL,
+    ProductName nvarchar(100) NOT NULL,
+    Price money NOT NULL,
+    StockQuantity int NOT NULL,
+    CONSTRAINT PK_Product PRIMARY KEY (ProductID),
+    CONSTRAINT CK_Product_Price CHECK (Price > 0),
+    CONSTRAINT CK_Product_Stock CHECK (StockQuantity >= 0)
+);
+
+CREATE TABLE dbo.OrderStatus (
+    OrderStatusID int IDENTITY(1,1) NOT NULL,
+    StatusName nvarchar(50) NOT NULL,
+    CONSTRAINT PK_OrderStatus PRIMARY KEY (OrderStatusID),
+    CONSTRAINT UQ_OrderStatus_Name UNIQUE (StatusName)
+);
+
+CREATE TABLE dbo.Orders (
+    OrderID int IDENTITY(1001,1) NOT NULL,
+    CustomerID int NOT NULL,
+    OrderStatusID int NOT NULL,
+    OrderDate datetime NOT NULL CONSTRAINT DF_Orders_Date DEFAULT GETDATE(),
+    TotalAmount money NOT NULL CONSTRAINT DF_Orders_Total DEFAULT 0,
+    CONSTRAINT PK_Orders PRIMARY KEY (OrderID),
+    CONSTRAINT FK_Orders_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customer(CustomerID),
+    CONSTRAINT FK_Orders_Status FOREIGN KEY (OrderStatusID) REFERENCES dbo.OrderStatus(OrderStatusID)
+);
+
+CREATE TABLE dbo.OrderLine (
+    OrderLineID int IDENTITY(1,1) NOT NULL,
+    OrderID int NOT NULL,
+    ProductID int NOT NULL,
+    Quantity int NOT NULL,
+    UnitPrice money NOT NULL,
+    CONSTRAINT PK_OrderLine PRIMARY KEY (OrderLineID),
+    CONSTRAINT FK_OrderLine_Order FOREIGN KEY (OrderID) REFERENCES dbo.Orders(OrderID) ON DELETE CASCADE,
+    CONSTRAINT FK_OrderLine_Product FOREIGN KEY (ProductID) REFERENCES dbo.Product(ProductID),
+    CONSTRAINT CK_OrderLine_Qty CHECK (Quantity > 0)
+);
+
+CREATE TABLE dbo.ShoppingCart (
+    CartID int IDENTITY(1,1) NOT NULL,
+    CustomerID int NOT NULL,
+    CreationDate datetime NOT NULL CONSTRAINT DF_Cart_Date DEFAULT GETDATE(),
+    CONSTRAINT PK_ShoppingCart PRIMARY KEY (CartID),
+    CONSTRAINT FK_ShoppingCart_Customer FOREIGN KEY (CustomerID) REFERENCES dbo.Customer(CustomerID) ON DELETE CASCADE
+);
+
+CREATE TABLE dbo.ShoppingCartItem (
+    CartID int NOT NULL,
+    ProductID int NOT NULL,
+    Quantity int NOT NULL,
+    Price money NOT NULL,
+    CONSTRAINT PK_ShoppingCartItem PRIMARY KEY (CartID, ProductID),
+    CONSTRAINT FK_CartItem_Cart FOREIGN KEY (CartID) REFERENCES dbo.ShoppingCart(CartID) ON DELETE CASCADE,
+    CONSTRAINT FK_CartItem_Product FOREIGN KEY (ProductID) REFERENCES dbo.Product(ProductID),
+    CONSTRAINT CK_CartItem_Qty CHECK (Quantity > 0)
+);
+GO
+
+SET IDENTITY_INSERT dbo.OrderStatus ON;
+INSERT INTO dbo.OrderStatus (OrderStatusID, StatusName) VALUES 
+(1, 'Pending'), (2, 'Processing'), (3, 'Shipped'), (4, 'Delivered'), 
+(5, 'Canceled'), (6, 'Returned'), (7, 'Awaiting Payment');
+SET IDENTITY_INSERT dbo.OrderStatus OFF;
+
+SET IDENTITY_INSERT dbo.Product ON;
+INSERT INTO dbo.Product (ProductID, ProductName, Price, StockQuantity) VALUES
+(101, N'Laptop ''ProBook''', 35000, 12),
+(102, N'Samsung 4K TV 55"', 22500, 5),
+(103, N'Wireless Mouse', 550, 45),
+(104, N'Robot Vacuum Cleaner', 11200, 8),
+(105, N'Electric Kettle', 850, 30),
+(106, N'1TB SSD External', 2900, 25),
+(107, N'Coffee Machine ''Latte''', 5800, 6);
+SET IDENTITY_INSERT dbo.Product OFF;
+
+INSERT INTO dbo.Customer (FullName, Email, Address, Phone) VALUES
+(N'Ihor Kovalenko', 'ikov@mail.com', N'Kyiv, Soborna St. 15', '+38(050) 111-22-33'),
+(N'Oksana Lisova', 'olisova@g.com', N'Kyiv, Ivan Franko Ave. 2', '+38(067) 222-33-44'),
+(N'Mykyta Hurnyk', 'mykyta@mail.com', N'Kyiv, Knyaziv Ostrozky St. 3', '+38(093) 333-44-55'),
+(N'Zlata Bilous', 'zb_zla@g.com', N'Lutsk, Holovna St. 4', '+38(095) 444-55-66'),
+(N'Serhiy Pliev', 'serhiy.p@i.ua', N'Kyiv, Lesi Ukrainky Blvd. 10', '+38(063) 555-66-77'),
+(N'Mykyta Zhongler', 'mykyta_zbol@uam', N'Rivne, Soborna St. 22', '+38(066) 666-77-88');
+
+SET IDENTITY_INSERT dbo.Orders ON;
+INSERT INTO dbo.Orders (OrderID, CustomerID, OrderStatusID, OrderDate, TotalAmount) VALUES
+(1001, 3, 4, '2025-10-20', 35550), (1002, 1, 3, '2025-10-25', 23050),
+(1003, 2, 4, '2025-11-01', 11750), (1004, 4, 2, '2025-11-10', 1700),
+(1005, 5, 1, '2025-11-15', 8700),  (1006, 1, 4, '2025-11-16', 11750),
+(1007, 2, 3, '2025-11-17', 2900),  (1008, 3, 7, '2025-11-18', 37900),
+(1009, 5, 4, '2025-11-19', 23350), (1010, 1, 1, '2025-11-20', 1100),
+(1011, 2, 2, '2025-11-21', 2900),  (1012, 3, 4, '2025-11-22', 12050),
+(1013, 4, 3, '2025-11-23', 60400), (1014, 5, 6, '2025-11-24', 550),
+(1015, 6, 5, '2025-11-25', 1650),
+(1016, 1, 1, '2025-11-26', 850),
+(1017, 2, 2, '2025-11-27', 11200),
+(1018, 3, 4, '2025-11-28', 550),
+(1019, 4, 3, '2025-11-29', 2900),
+(1020, 5, 1, '2025-11-30', 5800);
+SET IDENTITY_INSERT dbo.Orders OFF;
+
+SET IDENTITY_INSERT dbo.OrderLine ON;
+INSERT INTO dbo.OrderLine (OrderLineID, OrderID, ProductID, Quantity, UnitPrice) VALUES
+(1, 1001, 101, 1, 35000), (2, 1001, 103, 1, 550),
+(3, 1002, 102, 1, 22500), (4, 1002, 105, 2, 850),
+(5, 1003, 104, 1, 11200), (6, 1003, 103, 1, 550),
+(7, 1004, 105, 2, 850),   (8, 1005, 106, 3, 2900),
+(9, 1005, 103, 1, 550),   (10, 1005, 104, 1, 11200),
+(11, 1005, 103, 4, 550),  (12, 1006, 106, 3, 2900),
+(13, 1007, 101, 1, 35000), (14, 1007, 106, 2, 2900),
+(15, 1008, 105, 5, 850),  (16, 1009, 102, 1, 22500),
+(17, 1009, 105, 2, 850),  (18, 1010, 103, 10, 550),
+(19, 1011, 106, 1, 2900), (20, 1012, 104, 1, 11200),
+(21, 1012, 105, 3, 850),  (22, 1013, 101, 1, 35000),
+(23, 1013, 102, 1, 22500), (24, 1014, 106, 2, 2900),
+(25, 1015, 103, 5, 550),
+(26, 1016, 105, 1, 850),
+(27, 1017, 104, 1, 11200),
+(28, 1018, 103, 1, 550),
+(29, 1019, 106, 1, 2900),
+(30, 1020, 107, 1, 5800);
+SET IDENTITY_INSERT dbo.OrderLine OFF;
+
+SET IDENTITY_INSERT dbo.ShoppingCart ON;
+INSERT INTO dbo.ShoppingCart (CartID, CustomerID, CreationDate) VALUES
+(1, 4, '2025-11-14'), (2, 1, '2025-11-15'), (3, 1, '2025-11-16'),
+(4, 2, '2025-11-20'), (5, 3, '2025-11-21'), (6, 1, '2025-11-22');
+SET IDENTITY_INSERT dbo.ShoppingCart OFF;
+
+INSERT INTO dbo.ShoppingCartItem (CartID, ProductID, Quantity, Price) VALUES
+(1, 104, 1, 11200), (1, 105, 2, 2900), (2, 101, 1, 35000),
+(3, 102, 1, 22500), (3, 105, 4, 850), (3, 107, 1, 5800), (4, 102, 2, 22500);
+GO
+
+SELECT * FROM dbo.Product;
+
+SELECT 
+    @@SERVERNAME AS ServerName,
+    ORIGINAL_LOGIN() AS UserAccount;
+
+GO
