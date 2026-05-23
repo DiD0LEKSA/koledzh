@@ -1,0 +1,2642 @@
+package org.oleksijson;
+
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+public class Main extends Application {
+
+    @Override
+    public void start(Stage stage) {
+        // Створюємо простий текст
+        Label label = new Label("Система готова! Java 25 та JavaFX працюють.");
+
+        // Кладемо його в контейнер по центру
+        StackPane root = new StackPane(label);
+        Scene scene = new Scene(root, 400, 200);
+
+        stage.setTitle("OleksiJson Converter - Test");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    static void main() {
+        launch();
+    }
+}
+
+package org.oleksijson;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+public class Main extends Application {
+
+    @Override
+    public void start(Stage stage) throws Exception {
+        // Цей рядок каже програмі: "Піди в ресурси і знайди там наш дизайн"
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/org/oleksijson/ui/main-view.fxml"));
+
+        // Завантажуємо дизайн як основу вікна
+        Scene scene = new Scene(fxmlLoader.load(), 800, 600);
+
+        stage.setTitle("OleksiJson Converter");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    static void main() {
+        launch();
+    }
+}
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.stage.FileChooser;
+import org.oleksijson.core.IntParser;
+import org.oleksijson.core.LocalizationEntry;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class MainController {
+    // Тут ми будемо писати логіку кнопок
+    private IntParser parser = new IntParser();
+    @FXML
+    private void handleSelectFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Оберіть файл для конвертації");
+        // Можеш додати фільтри, наприклад тільки для .int файлів
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Localization Files", "*.int", "*.txt")
+        );
+
+        File selectedFile = fileChooser.showOpenDialog(null);
+
+        if (selectedFile != null) {
+            System.out.println("Обрано файл: " + selectedFile.getAbsolutePath());
+        }
+}
+
+package org.oleksijson.core;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class IntParser {
+
+    public List<LocalizationEntry> parse(File file) throws IOException {
+        List<LocalizationEntry> entries = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+
+                // Пропускаємо порожні рядки, коментарі та назви секцій [Секція]
+                if (line.isEmpty() || line.startsWith(";") || line.startsWith("[")) {
+                    continue;
+                }
+
+                // Шукаємо знак рівності
+                if (line.contains("=")) {
+                    int eqIndex = line.indexOf("=");
+                    String key = line.substring(0, eqIndex).trim();
+                    String value = line.substring(eqIndex + 1).trim();
+
+                    // Прибираємо лапки, якщо вони є навколо тексту
+                    if (value.startsWith("\"") && value.endsWith("\"")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+
+                    entries.add(new LocalizationEntry(key, value));
+                }
+            }
+        }
+        return entries;
+    }
+}
+
+package org.oleksijson.core;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class IntParser {
+
+    public List<LocalizationEntry> parse(File file) throws IOException {
+        List<LocalizationEntry> entries = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+
+                // Пропускаємо порожні рядки, коментарі та назви секцій [Секція]
+                if (line.isEmpty() || line.startsWith(";") || line.startsWith("[")) {
+                    continue;
+                }
+
+                // Шукаємо знак рівності
+                if (line.contains("=")) {
+                    int eqIndex = line.indexOf("=");
+                    String key = line.substring(0, eqIndex).trim();
+                    String value = line.substring(eqIndex + 1).trim();
+
+                    // Знайди цей блок і заміни його
+                    if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+
+                    entries.add(new LocalizationEntry(key, value));
+                }
+            }
+        }
+        return entries;
+    }
+}
+
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.stage.FileChooser;
+import org.oleksijson.core.IntParser;
+import org.oleksijson.core.JsonExporter;
+import org.oleksijson.core.LocalizationEntry;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class MainController {
+    // Тут ми будемо писати логіку кнопок
+    private IntParser parser = new IntParser();
+    private final JsonExporter exporter = new JsonExporter();
+    @FXML
+    private void onOpenFileClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Виберіть .int файл для конвертації");
+
+        // Додаємо фільтр, щоб бачити тільки ігрові файли
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Localization Files", "*.int", "*.ini")
+        );
+
+        File selectedFile = fileChooser.showOpenDialog(null);
+
+        if (selectedFile != null) {
+            try {
+                List<LocalizationEntry> data = parser.parse(selectedFile);
+
+                // Тимчасово виведемо результат у консоль, щоб перевірити
+                System.out.println("Знайдено рядків: " + data.size());
+                data.forEach(System.out::println);
+
+                // Тепер пропонуємо зберегти результат
+                FileChooser saveChooser = new FileChooser();
+                saveChooser.setTitle("Зберегти результат як JSON");
+                saveChooser.setInitialFileName(selectedFile.getName().replace(".int", ".json"));
+                saveChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+                File saveFile = saveChooser.showSaveDialog(null);
+
+                if(saveFile != null){
+                    exporter.export(data, saveFile);
+                    System.out.println("Файл успішно збережено: " + saveFile.getAbsolutePath());
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Тут ми пізніше додамо гарне вікно з помилкою
+            }
+        }
+    }
+}
+
+package org.oleksijson.core.model;
+
+/**
+ * Модель однієї одиниці локалізації.
+ * key - назва рядка в коді гри (наприклад, "Main_Menu_Title")
+ * value - сам текст (наприклад, "Головне меню")
+ */
+public class LocalizationEntry {
+    private final String key;
+    private final String value;
+
+    public LocalizationEntry(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    // Геттери (вони потрібні для Jackson, щоб він міг зробити JSON)
+    public String getKey() { return key; }
+    public String getValue() { return value; }
+
+    @Override
+    public String toString() {
+        return "Key: " + key + " | Value: " + value;
+    }
+}
+
+package org.oleksijson.core.parser.ue;
+
+import org.oleksijson.core.model.LocalizationEntry;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+public class IntParser {
+
+    public List<LocalizationEntry> parse(File file) throws IOException {
+        List<LocalizationEntry> entries = new ArrayList<>();
+
+        // ... у методі parse:
+// Використовуємо Files.newBufferedReader, бо він дозволяє ЧІТКО вказати кодування
+        try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_16)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                line = line.trim();
+
+                // Пропускаємо порожні рядки, коментарі та назви секцій [Секція]
+                if (line.isEmpty() || line.startsWith(";") || line.startsWith("[")) {
+                    continue;
+                }
+
+                // Шукаємо знак рівності
+                if (line.contains("=")) {
+                    int eqIndex = line.indexOf("=");
+                    String key = line.substring(0, eqIndex).trim();
+                    String value = line.substring(eqIndex + 1).trim();
+
+                    // Знайди цей блок і заміни його
+                    if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+                        value = value.substring(1, value.length() - 1);
+                    }
+
+                    entries.add(new LocalizationEntry(key, value));
+                }
+            }
+        }
+        return entries;
+    }
+}
+
+package org.oleksijson.core.exporter.json;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.oleksijson.core.model.LocalizationEntry;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class JsonExporter {
+    private final ObjectMapper mapper;
+
+    public JsonExporter() {
+        this.mapper = new ObjectMapper();
+        // Робимо JSON гарним (з відступами), а не в один рядок
+        this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
+    }
+
+    public void export(List<LocalizationEntry> data, File outputFile) throws IOException {
+        mapper.writeValue(outputFile, data);
+    }
+}
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.stage.FileChooser;
+import org.oleksijson.core.parser.ue.IntParser;
+import org.oleksijson.core.exporter.json.JsonExporter;
+import org.oleksijson.core.model.LocalizationEntry;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class MainController {
+    // Елементи інтерфейсу (додай id у Scene Builder)
+    @FXML private Label statusLabel;      // "Очікую на вибір файлу..."
+    @FXML private TextField pathField;    // Поле зі шляхом
+
+    // Тут ми будемо писати логіку кнопок
+    private IntParser parser = new IntParser();
+    private final JsonExporter exporter = new JsonExporter();
+
+    private File selectedSource; // Тут зберігаємо те, що вибрав користувач
+
+    @FXML
+    private void onSelectFileClick() {
+        FileChooser chooser = new FileChooser();
+        selectedSource = chooser.showOpenDialog(null);
+        updateUI();
+    }
+
+    @FXML
+    private void onSelectFolderClick() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        selectedSource = chooser.showDialog(null);
+        updateUI();
+    }
+
+    @FXML
+    private void onConvertToJsonClick() {
+        if (selectedSource == null) return;
+
+        try {
+            // Якщо це файл .int — парсимо і зберігаємо в .json
+            if (selectedSource.isFile() && selectedSource.getName().endsWith(".int")) {
+                List<LocalizationEntry> data = intParser.parse(selectedSource);
+                File outputFile = new File(selectedSource.getAbsolutePath().replace(".int", ".json"));
+                jsonExporter.export(data, outputFile);
+                statusLabel.setText("Успішно конвертовано в JSON!");
+            }
+        } catch (IOException e) {
+            statusLabel.setText("Помилка при конвертації!");
+            e.printStackTrace();
+        }
+    }
+
+    private void updateUI() {
+        if (selectedSource != null) {
+            pathField.setText(selectedSource.getAbsolutePath());
+            statusLabel.setText("Джерело обрано. Готово до роботи.");
+        }
+    }
+
+    @FXML
+    private void onExitClick() {
+        System.exit(0);
+    }
+
+    @FXML
+    private void onOpenFileClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Виберіть .int файл для конвертації");
+
+        // Додаємо фільтр, щоб бачити тільки ігрові файли
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Localization Files", "*.int", "*.ini")
+        );
+
+        File selectedFile = fileChooser.showOpenDialog(null);
+
+        if (selectedFile != null) {
+            try {
+                List<LocalizationEntry> data = parser.parse(selectedFile);
+
+                // Тимчасово виведемо результат у консоль, щоб перевірити
+                System.out.println("Знайдено рядків: " + data.size());
+                data.forEach(System.out::println);
+
+                // Тепер пропонуємо зберегти результат
+                FileChooser saveChooser = new FileChooser();
+                saveChooser.setTitle("Зберегти результат як JSON");
+                saveChooser.setInitialFileName(selectedFile.getName().replace(".int", ".json"));
+                saveChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON Files", "*.json"));
+
+                File saveFile = saveChooser.showSaveDialog(null);
+
+                if(saveFile != null){
+                    exporter.export(data, saveFile);
+                    System.out.println("Файл успішно збережено: " + saveFile.getAbsolutePath());
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Тут ми пізніше додамо гарне вікно з помилкою
+            }
+        }
+    }
+}
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Оберіть файл локалізації");
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Localization Files", "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Оберіть папку з файлами");
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText("Об’єкт обрано: " + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                conversionService.convertFolderToJson(selectedPath, deleteOriginalsCheck.isSelected());
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, "Конвертація в JSON успішна!");
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                conversionService.convertFolderToInt(selectedPath, deleteOriginalsCheck.isSelected());
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, "Конвертація в INT успішна!");
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText("Готово!");
+            AlertHelper.showInfo("Успіх", successMessage);
+        } catch (IOException e) {
+            statusLabel.setText("Помилка!");
+            AlertHelper.showError("Помилка", "Сталася проблема при обробці: " + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+@font-face {
+    font-family: 'KyivType Sans Medium';
+    src: url('../fonts/KyivTypeSans-Medium.ttf');
+}
+
+.root {
+    -fx-font-family: 'KyivType Sans Medium' !important;
+    -fx-base: red; /* Це має зробити фон програми або елементів червоним */
+}
+
+.button, .label, .menu, .menu-item {
+    -fx-font-family: 'KyivType Sans Medium' !important;
+}
+
+/* Примусово для всіх текстових елементів */
+.label, .button, .text, .text-field, .menu, .menu-item {
+    -fx-font-family: "KyivType Sans Medium" !important;
+}
+
+/* Окремо для твого заголовка "Налаштування", якщо він у Label */
+#settingsTitle { /* Якщо ти дав йому такий fx:id */
+    -fx-font-family: "KyivType Sans Medium" !important;
+    -fx-font-weight: bold;
+}
+
+package org.oleksijson.core.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+/**
+ * Оновлена модель для OleksiJson.
+ * Порядок полів: section -> key -> source -> translation.
+ */
+@JsonPropertyOrder({ "section", "key", "source", "translation" })
+@JsonIgnoreProperties(ignoreUnknown = true) // Ігноруй все, чого немає в цьому класі
+public class LocalizationEntry {
+    private String section;
+    private String key;
+    private String source;
+    private String translation;
+
+    // Порожній конструктор (завжди потрібен для Jackson)
+    public LocalizationEntry() {}
+
+    // Конструктор для створення записів під час парсингу .int
+    public LocalizationEntry(String section, String key, String source, String translation) {
+        this.section = section;
+        this.key = key;
+        this.source = source;
+        this.translation = translation;
+    }
+
+    // Геттери та сеттери
+    public String getSection() { return section; }
+    public void setSection(String section) { this.section = section; }
+
+    public String getKey() { return key; }
+    public void setKey(String key) { this.key = key; }
+
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
+
+    public String getTranslation() { return translation; }
+    public void setTranslation(String translation) { this.translation = translation; }
+}
+
+package org.oleksijson.core.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.InputStream;
+
+public class LocalizationManager {
+    private static JsonNode translations;
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    public static void load(String lang) {
+        // 1. Формуємо шлях. ВАЖЛИВО: без "/" на початку для getClassLoader()
+        String path = "localizations/" + lang + ".json";
+
+        System.out.println("🔍 Шукаю локалізацію: " + path);
+
+        // 2. Спроба завантажити через ClassLoader (найкращий варіант для Maven)
+        InputStream is = LocalizationManager.class.getClassLoader().getResourceAsStream(path);
+
+        // 3. Якщо не знайшло, пробуємо через сам клас (із косою рискою)
+        if (is == null) {
+            is = LocalizationManager.class.getResourceAsStream("/" + path);
+        }
+
+        if (is != null) {
+            try {
+                translations = mapper.readTree(is);
+                System.out.println("✅ Файл знайдено і завантажено!");
+            } catch (Exception e) {
+                System.err.println("❌ Помилка синтаксису JSON: " + e.getMessage());
+            }
+        } else {
+            System.err.println("❌ КРИТИЧНО: Файл не знайдено за шляхом: " + path);
+            // Створюємо порожній вузол, щоб програма не падала з помилкою "in is null"
+            translations = mapper.createObjectNode();
+        }
+    }
+
+    public static String get(String path) {
+        if (translations == null) return path;
+
+        // Дозволяє діставати значення через крапку: "menu.settings"
+        String[] keys = path.split("\\.");
+        JsonNode node = translations;
+        for (String key : keys) {
+            node = node.get(key);
+            if (node == null){
+            System.err.println("❌ Ключ не знайдено: " + path);
+            return path; // Повертаємо сам шлях, щоб не було порожнього місця в UI
+                }
+        }
+        return node.asText();
+    }
+}
+
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_ready"));
+        pathField.setPromptText(LocalizationManager.get("window.path_prompt"));
+
+        // Кнопки
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.to_int"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_original"));
+        // якщо є інші пункти меню:
+        // settingsMenu.setText(LocalizationManager.get("menu.settings"));
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("window.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("alerts.success_title"),
+                    LocalizationManager.get("alerts." + successMessage) // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("window.status_error"));
+            AlertHelper.showError(LocalizationManager.get("alerts.error_title"),
+                    LocalizationManager.get("errors.processing") + ": " + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_ready"));
+        pathField.setPromptText(LocalizationManager.get("window.path_prompt"));
+
+        // Кнопки
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.to_int"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_original"));
+        // якщо є інші пункти меню:
+        // settingsMenu.setText(LocalizationManager.get("menu.settings"));
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.error_title" + successMessage) // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("errors.processing") + ": " + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_ready"));
+        pathField.setPromptText(LocalizationManager.get("window.path_prompt"));
+
+        // Кнопки
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.to_int"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_original"));
+        // якщо є інші пункти меню:
+        // settingsMenu.setText(LocalizationManager.get("menu.settings"));
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_descripton") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+@FXML
+private Button selectFileButton;
+
+@FXML
+private Button selectFolderButton;
+
+@FXML
+private Button exitButton;
+
+@FXML
+private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+    @FXML
+    private Button selectFileButton;
+
+    @FXML
+    private Button selectFolderButton;
+
+    @FXML
+    private Button exitButton;
+
+    @FXML
+    private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_descripton") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Очікую на вибір файлу...",
+    "status_error": "Сталася помилка!",
+    "path_field": "Будь ласка, оберіть файл або теку..."
+  },
+  "menu": {
+    "settings": "Налаштування",
+    "delete_originals": "Видаляти оригінал",
+    "theme": "Тема",
+    "theme_light": "Світла",
+    "theme_dark": "Темна",
+    "language": "Мова",
+    "language_english": "English",
+    "language_ukrainian": "Українська"
+  },
+  "buttons": {
+    "choose_file": "Оберіть файл",
+    "choose_folder": "Оберіть теку",
+    "convert_to_json": "Конвертувати у JSON",
+    "convert_to_int": "Конвертувати в INT",
+    "exit": "Вийти"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Оберіть файл локалізації",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Оберіть папку з файлами",
+      "status_object_selected": "Об’єкт обрано: ",
+      "status_convert_int_to_json": "Конвертація в JSON успішна!",
+      "status_convert_json_to_int": "Конвертація в INT успішна!",
+      "status_ready": "Готово!",
+      "status_success": "Успіх!",
+      "status_error_title1": "Помилка!",
+      "status_error_title2": "Помилка",
+      "status_error_description": "Сталася помилка при обробці: "
+    }
+  }
+}
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Waiting for file selection...",
+    "status_error": "An error occurred!",
+    "path_field": "Please select a file or folder..."
+  },
+  "menu": {
+    "settings": "Settings",
+    "delete_originals": "Delete originals",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "language": "Language",
+    "language_english": "English",
+    "language_ukrainian": "Ukrainian"
+  },
+  "buttons": {
+    "choose_file": "Choose File",
+    "choose_folder": "Choose Folder",
+    "convert_to_json": "Convert to JSON",
+    "convert_to_int": "Convert to INT",
+    "exit": "Exit"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Select localization file",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Select folder with files",
+      "status_object_selected": "Object selected: ",
+      "status_convert_int_to_json": "JSON conversion successful!",
+      "status_convert_json_to_int": "INT conversion successful!",
+      "status_ready": "Ready!",
+      "status_success": "Success!",
+      "status_error_title1": "Error!",
+      "status_error_title2": "Error",
+      "status_error_descripton": "An error occurred during processing: "
+    }
+  }
+}
+
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+    @FXML
+    private Button selectFileButton;
+
+    @FXML
+    private Button selectFolderButton;
+
+    @FXML
+    private Button exitButton;
+
+    @FXML
+    private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_description") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Waiting for file selection...",
+    "status_error": "An error occurred!",
+    "path_field": "Please select a file or folder..."
+  },
+  "menu": {
+    "settings": "Settings",
+    "delete_originals": "Delete originals",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "language": "Language",
+    "language_english": "English",
+    "language_ukrainian": "Українська"
+  },
+  "buttons": {
+    "choose_file": "Choose File",
+    "choose_folder": "Choose Folder",
+    "convert_to_json": "Convert to JSON",
+    "convert_to_int": "Convert to INT",
+    "exit": "Exit"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Select localization file",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Select folder with files",
+      "status_object_selected": "Object selected: ",
+      "status_convert_int_to_json": "JSON conversion successful!",
+      "status_convert_json_to_int": "INT conversion successful!",
+      "status_ready": "Ready!",
+      "status_success": "Success!",
+      "status_error_title1": "Error!",
+      "status_error_title2": "Error",
+      "status_error_description": "An error occurred during processing: ",
+      "status_lang_changed_to_eng": "Language changed to English",
+      
+    }
+  }
+}
+
+package org.oleksijson.ui;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn;
+    @FXML private Button convertToIntBtn;
+    @FXML private Button selectFileButton;
+    @FXML private Button selectFolderButton;
+    @FXML private Button exitButton;
+    @FXML private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+    @FXML private Menu languageMenu;
+    @FXML private MenuItem englishMenuItem;
+    @FXML private MenuItem ukrainianMenuItem;
+
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        languageMenu.setText(LocalizationManager.get("menu.language"));
+        englishMenuItem.setText(LocalizationManager.get("menu.language_english"));
+        ukrainianMenuItem.setText(LocalizationManager.get("menu.language_ukrainian"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_description") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onLanguageEnglish() {
+        LocalizationManager.load("en_us"); // Завантажуємо англійську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Language changed to English");
+    }
+
+    @FXML
+    private void onLanguageUkrainian() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Мову змінено на українську");
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Очікую на вибір файлу...",
+    "status_error": "Сталася помилка!",
+    "path_field": "Будь ласка, оберіть файл або теку..."
+  },
+  "menu": {
+    "settings": "Налаштування",
+    "delete_originals": "Видаляти оригінал",
+    "theme": "Тема",
+    "theme_light": "Світла",
+    "theme_dark": "Темна",
+    "language": "Мова",
+    "language_english": "English",
+    "language_ukrainian": "Українська"
+  },
+  "buttons": {
+    "choose_file": "Оберіть файл",
+    "choose_folder": "Оберіть теку",
+    "convert_to_json": "Конвертувати у JSON",
+    "convert_to_int": "Конвертувати в INT",
+    "exit": "Вийти"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Оберіть файл локалізації",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Оберіть папку з файлами",
+      "status_object_selected": "Об’єкт обрано: ",
+      "status_convert_int_to_json": "Конвертація в JSON успішна!",
+      "status_convert_json_to_int": "Конвертація в INT успішна!",
+      "status_ready": "Готово!",
+      "status_success": "Успіх!",
+      "status_error_title1": "Помилка!",
+      "status_error_title2": "Помилка",
+      "status_error_description": "Сталася помилка при обробці: ",
+      "theme_changed_to_light": "Встановлено світлу тему.",
+      "theme_changed_to_dark": "Встановлено темну тему."
+    }
+  }
+}
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Очікую на вибір файлу...",
+    "status_error": "Сталася помилка!",
+    "path_field": "Будь ласка, оберіть файл або теку..."
+  },
+  "menu": {
+    "settings": "Налаштування",
+    "delete_originals": "Видаляти оригінал",
+    "theme": "Тема",
+    "theme_light": "Світла",
+    "theme_dark": "Темна",
+    "language": "Мова",
+    "language_english": "English",
+    "language_ukrainian": "Українська"
+  },
+  "buttons": {
+    "choose_file": "Оберіть файл",
+    "choose_folder": "Оберіть теку",
+    "convert_to_json": "Конвертувати у JSON",
+    "convert_to_int": "Конвертувати в INT",
+    "exit": "Вийти"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Оберіть файл локалізації",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Оберіть папку з файлами",
+      "status_object_selected": "Об’єкт обрано: ",
+      "status_convert_int_to_json": "Конвертація в JSON успішна!",
+      "status_convert_json_to_int": "Конвертація в INT успішна!",
+      "status_ready": "Готово!",
+      "status_success": "Успіх!",
+      "status_error_title1": "Помилка!",
+      "status_error_title2": "Помилка",
+      "status_error_description": "Сталася помилка при обробці: ",
+      "theme_changed_to_light": "Тему змінено на світлу.",
+      "theme_changed_to_dark": "Тему змінено на темну."
+    }
+  }
+}
+
+{
+  "window": {
+    "title": "OleksiJson Converter",
+    "status_waiting_for": "Waiting for file selection...",
+    "status_error": "An error occurred!",
+    "path_field": "Please select a file or folder..."
+  },
+  "menu": {
+    "settings": "Settings",
+    "delete_originals": "Delete originals",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "language": "Language",
+    "language_english": "English",
+    "language_ukrainian": "Українська"
+  },
+  "buttons": {
+    "choose_file": "Choose File",
+    "choose_folder": "Choose Folder",
+    "convert_to_json": "Convert to JSON",
+    "convert_to_int": "Convert to INT",
+    "exit": "Exit"
+  },
+  "system": {
+    "controller": {
+      "file_chooser_title": "Select localization file",
+      "file_chooser_extension_filter_description": "Localization Files",
+      "directory_chooser_title": "Select folder with files",
+      "status_object_selected": "Object selected: ",
+      "status_convert_int_to_json": "JSON conversion successful!",
+      "status_convert_json_to_int": "INT conversion successful!",
+      "status_ready": "Ready!",
+      "status_success": "Success!",
+      "status_error_title1": "Error!",
+      "status_error_title2": "Error",
+      "status_error_description": "An error occurred during processing: ",
+      "theme_changed_to_light": "Theme changed to Light",
+      "theme_changed_to_dark": "Theme changed to Dark"
+    }
+  }
+}
+
+package org.oleksijson.ui;
+
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import javafx.application.Application;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn, convertToIntBtn;
+    @FXML private Button selectFileButton, selectFolderButton;
+    @FXML private Button exitButton;
+    @FXML private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+    @FXML private Menu languageMenu;
+    @FXML private RadioMenuItem englishMenuItem, ukrainianMenuItem;
+    @FXML private Menu themeMenu;
+    @FXML private RadioMenuItem lightThemeItem, darkThemeItem;
+
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("en_eu"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        languageMenu.setText(LocalizationManager.get("menu.language"));
+        englishMenuItem.setText(LocalizationManager.get("menu.language_english"));
+        ukrainianMenuItem.setText(LocalizationManager.get("menu.language_ukrainian"));
+        themeMenu.setText(LocalizationManager.get("menu.theme"));
+        lightThemeItem.setText(LocalizationManager.get("menu.theme_light"));
+        darkThemeItem.setText(LocalizationManager.get("menu.theme_dark"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_description") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onLanguageEnglish() {
+        LocalizationManager.load("en_eu"); // Завантажуємо англійську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Language changed to English");
+    }
+
+    @FXML
+    private void onLanguageUkrainian() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Мову змінено на українську");
+    }
+
+    @FXML
+    private void onLightTheme() {
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_light"));
+    }
+
+    @FXML
+    private void onDarkTheme() {
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_dark"));
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+package org.oleksijson.core.service;
+
+import org.oleksijson.core.model.LocalizationEntry;
+import org.oleksijson.core.parser.ue.IntParser;
+import org.oleksijson.core.parser.json.JsonParser;
+import org.oleksijson.core.exporter.ue.IntExporter;
+import org.oleksijson.core.exporter.json.JsonExporter;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+public class ConversionService {
+    private final IntParser intParser = new IntParser();
+    private final JsonParser jsonParser = new JsonParser();
+    private final IntExporter intExporter = new IntExporter();
+    private final JsonExporter jsonExporter = new JsonExporter();
+
+    /**
+     * Конвертує .int (UE) файл у JSON
+     */
+    public void convertIntToJson(File inputFile, File outputFile) throws IOException {
+        List<LocalizationEntry> entries = intParser.parse(inputFile);
+        jsonExporter.export(entries, outputFile);
+    }
+
+    /**
+     * Конвертує JSON файл назад у .int (UE)
+     */
+    public void convertJsonToInt(File inputFile, File outputFile) throws IOException {
+        List<LocalizationEntry> entries = jsonParser.parse(inputFile);
+        intExporter.export(entries, outputFile);
+    }
+
+    // --- МАСОВА КОНВЕРТАЦІЯ (ТВОЇ "ТЕКИ") ---
+
+    public void convertFolderToJson(File folder, boolean deleteOriginals) throws IOException {
+        File[] files = folder.listFiles((_, name) -> name.toLowerCase().endsWith(".int"));
+        if (files == null) return;
+
+        for (File file : files) {
+            File outputFile = new File(file.getParent(), file.getName().replaceAll("(?i)\\.int$", ".json"));
+            convertIntToJson(file, outputFile);
+
+            if (deleteOriginals) {
+                boolean deleted = file.delete(); // Перевіряємо видалення, щоб не було варнінгу
+            }
+        }
+    }
+
+    public void convertFolderToInt(File folder, boolean deleteOriginals) throws IOException {
+        File[] files = folder.listFiles((_, name) -> name.toLowerCase().endsWith(".json"));
+        if (files == null) return;
+
+        for (File file : files) {
+            File outputFile = new File(file.getParent(), file.getName().replaceAll("(?i)\\.json$", ".int"));
+            convertJsonToInt(file, outputFile);
+
+            if (deleteOriginals) {
+                boolean deleted = file.delete();
+            }
+        }
+    }
+}
+
+package org.oleksijson.ui;
+
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import javafx.application.Application;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn, convertToIntBtn;
+    @FXML private Button selectFileButton, selectFolderButton;
+    @FXML private Button exitButton;
+    @FXML private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+    @FXML private Menu languageMenu;
+    @FXML private RadioMenuItem englishMenuItem, ukrainianMenuItem;
+    @FXML private Menu themeMenu;
+    @FXML private RadioMenuItem lightThemeItem, darkThemeItem;
+    @FXML private CheckMenuItem createNewFolderMenu;
+
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("en_eu"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        languageMenu.setText(LocalizationManager.get("menu.language"));
+        englishMenuItem.setText(LocalizationManager.get("menu.language_english"));
+        ukrainianMenuItem.setText(LocalizationManager.get("menu.language_ukrainian"));
+        themeMenu.setText(LocalizationManager.get("menu.theme"));
+        lightThemeItem.setText(LocalizationManager.get("menu.theme_light"));
+        darkThemeItem.setText(LocalizationManager.get("menu.theme_dark"));
+        createNewFolderMenu.setText(LocalizationManager.get("menu.create_new_folder"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToJson(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ:
+                conversionService.convertFolderToInt(selectedPath, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_description") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onLanguageEnglish() {
+        LocalizationManager.load("en_eu"); // Завантажуємо англійську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Language changed to English");
+    }
+
+    @FXML
+    private void onLanguageUkrainian() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Мову змінено на українську");
+    }
+
+    @FXML
+    private void onLightTheme() {
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_light"));
+    }
+
+    @FXML
+    private void onDarkTheme() {
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_dark"));
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+
+package org.oleksijson.ui;
+
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
+import javafx.application.Application;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import org.oleksijson.core.service.ConversionService;
+import org.oleksijson.core.service.LocalizationManager;
+import org.oleksijson.utils.AlertHelper;
+import javafx.scene.control.CheckMenuItem;
+
+import java.io.File;
+import java.io.IOException;
+
+public class MainController {
+
+    @FXML private TextField pathField;
+    @FXML private Label statusLabel;
+    @FXML private CheckMenuItem deleteOriginalsMenu;
+    @FXML private Button convertToJsonBtn, convertToIntBtn;
+    @FXML private Button selectFileButton, selectFolderButton;
+    @FXML private Button exitButton;
+    @FXML private Menu settingsMenu; // Або MenuItem, залежно від того, що це у тебе в SB
+    @FXML private Menu languageMenu;
+    @FXML private RadioMenuItem englishMenuItem, ukrainianMenuItem;
+    @FXML private Menu themeMenu;
+    @FXML private RadioMenuItem lightThemeItem, darkThemeItem;
+    @FXML private CheckMenuItem createNewFolderMenu;
+
+
+    private final ConversionService conversionService = new ConversionService();
+    private File selectedPath;
+
+    @FXML
+    private void initialize() {
+        LocalizationManager.load("en_eu"); // Завантажуємо українську
+        applyLocalization();
+
+        // Початковий стан кнопок — вимкнено, поки нічого не обрано
+        updateButtonStates(true);
+    }
+
+    private void applyLocalization() {
+        // Тексти вікна та статусів
+        // Припустимо, у тебе в JSON структура: "window": {"status_ready": "..."}
+        statusLabel.setText(LocalizationManager.get("window.status_waiting_for"));
+        pathField.setPromptText(LocalizationManager.get("window.path_field"));
+
+        // Кнопки
+        selectFileButton.setText(LocalizationManager.get("buttons.choose_file"));
+        selectFolderButton.setText(LocalizationManager.get("buttons.choose_folder"));
+        convertToJsonBtn.setText(LocalizationManager.get("buttons.convert_to_json"));
+        convertToIntBtn.setText(LocalizationManager.get("buttons.convert_to_int"));
+        exitButton.setText(LocalizationManager.get("buttons.exit"));
+
+        // Меню (не забудь додати fx:id для MenuItem у Scene Builder)
+        deleteOriginalsMenu.setText(LocalizationManager.get("menu.delete_originals"));
+        settingsMenu.setText(LocalizationManager.get("menu.settings"));
+        languageMenu.setText(LocalizationManager.get("menu.language"));
+        englishMenuItem.setText(LocalizationManager.get("menu.language_english"));
+        ukrainianMenuItem.setText(LocalizationManager.get("menu.language_ukrainian"));
+        themeMenu.setText(LocalizationManager.get("menu.theme"));
+        lightThemeItem.setText(LocalizationManager.get("menu.theme_light"));
+        darkThemeItem.setText(LocalizationManager.get("menu.theme_dark"));
+        createNewFolderMenu.setText(LocalizationManager.get("menu.create_new_folder"));
+        // якщо є інші пункти меню:
+
+    }
+
+    @FXML
+    private void onChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(LocalizationManager.get("system.controller.file_chooser_title"));
+        // Додаємо фільтри, щоб не бачити зайвого
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter(
+                        LocalizationManager.get("system.controller.file_chooser_extension_filter_description"), "*.int", "*.json", "*.ukr", "*.ger")
+        );
+
+        File file = fileChooser.showOpenDialog(new Stage());
+        if (file != null) {
+            processPathSelection(file);
+        }
+    }
+
+    @FXML
+    private void onChooseFolder() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle(LocalizationManager.get("system.controller.directory_chooser_title"));
+        File folder = directoryChooser.showDialog(new Stage());
+        if (folder != null) {
+            processPathSelection(folder);
+        }
+    }
+
+    private void processPathSelection(File file) {
+        selectedPath = file;
+        pathField.setText(selectedPath.getAbsolutePath());
+        statusLabel.setText(LocalizationManager.get("system.controller.status_object_selected") + selectedPath.getName());
+        updateButtonStates(false);
+    }
+
+    @FXML
+    private void onConvertToJson() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+
+                // 1. Визначаємо цільову папку
+                File targetDir = selectedPath;
+                if (createNewFolderMenu.isSelected()) {
+                    targetDir = new File(selectedPath.getParent(), selectedPath.getName() + "_converted");
+                }
+
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ: // 2. Викликаємо сервіс (тепер з трьома параметрами)
+                conversionService.convertFolderToJson(selectedPath, targetDir, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.(int|ukr|ger)$", ".json"));
+                conversionService.convertIntToJson(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_int_to_json")));
+    }
+
+    @FXML
+    private void onConvertToInt() {
+        runTask(() -> {
+            if (selectedPath.isDirectory()) {
+                boolean shouldDelete = deleteOriginalsMenu.isSelected();
+
+                // 1. Визначаємо цільову папку
+                File targetDir = selectedPath;
+                if (createNewFolderMenu.isSelected()) {
+                    targetDir = new File(selectedPath.getParent(), selectedPath.getName() + "_converted");
+                }
+
+                // ДОДАЄМО ВИКЛИК СЕРВІСУ ДЛЯ ТЕКИ: // 2. Викликаємо сервіс (тепер з трьома параметрами)
+                conversionService.convertFolderToJson(selectedPath, targetDir, shouldDelete);
+            } else {
+                File outputFile = new File(selectedPath.getParent(), selectedPath.getName().replaceAll("(?i)\\.json$", ".int"));
+                conversionService.convertJsonToInt(selectedPath, outputFile);
+            }
+        }, (LocalizationManager.get("system.controller.status_convert_json_to_int")));
+    }
+
+    private void runTask(RunnableWithException task, String successMessage) {
+        try {
+            task.run();
+            statusLabel.setText(LocalizationManager.get("system.controller.status_ready"));
+            AlertHelper.showInfo(
+                    LocalizationManager.get("system.controller.status_success"),
+                    LocalizationManager.get("system.controller.status_success") + " " + successMessage // Ключ успіху
+            );
+        } catch (IOException e) {
+            statusLabel.setText(LocalizationManager.get("system.controller.error_title1"));
+            AlertHelper.showError(LocalizationManager.get("system.controller.error_title2"),
+                    LocalizationManager.get("system.controller.status_error_description") + e.getMessage());
+        }
+    }
+
+    private void updateButtonStates(boolean disabled) {
+        convertToJsonBtn.setDisable(disabled);
+        convertToIntBtn.setDisable(disabled);
+    }
+
+    @FXML
+    private void onLanguageEnglish() {
+        LocalizationManager.load("en_eu"); // Завантажуємо англійську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Language changed to English");
+    }
+
+    @FXML
+    private void onLanguageUkrainian() {
+        LocalizationManager.load("uk_ua"); // Завантажуємо українську
+        applyLocalization();               // Оновлюємо всі тексти в інтерфейсі
+        System.out.println("Мову змінено на українську");
+    }
+
+    @FXML
+    private void onLightTheme() {
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_light"));
+    }
+
+    @FXML
+    private void onDarkTheme() {
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+        System.out.println(LocalizationManager.get("system.controller.theme_changed_to_dark"));
+    }
+
+    @FXML
+    private void onExitClick() {
+        // Красиво закриваємо програму
+        javafx.application.Platform.exit();
+        System.exit(0);
+    }
+
+    @FunctionalInterface
+    private interface RunnableWithException {
+        void run() throws IOException;
+    }
+}
+
+package org.oleksijson;
+
+import atlantafx.base.theme.PrimerDark;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.image.Image;
+import javafx.scene.text.Font;
+import javafx.stage.Stage;
+//import io.github.mkpaz.atlantafx.base.theme.PrimerDark;
+
+public class Main extends Application {
+
+    @Override
+    public void start(Stage stage) throws Exception {
+        // Цей рядок каже програмі: "Піди в ресурси і знайди там наш дизайн"
+        Font.loadFont(getClass().getResourceAsStream("/fonts/KyivTypeSans-Medium.ttf"), 12);
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/org/oleksijson/ui/main-view.fxml"));
+
+        // Завантажуємо дизайн як основу вікна
+        Scene scene = new Scene(fxmlLoader.load(), 640, 480);
+        scene.getStylesheets().add(getClass().getResource("/org/oleksijson/ui/style.css").toExternalForm()); // Твій стиль
+        Application.setUserAgentStylesheet(new PrimerDark().getUserAgentStylesheet());
+
+        stage.setTitle("OleksiJson Converter");
+        stage.setScene(scene);
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/org/oleksijson/ui/icon.png")));
+        stage.show();
+    }
+
+    static void main() {
+        launch();
+    }
+}
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.oleksijson</groupId>
+    <artifactId>OleksiJson</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>23.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-csv</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>org.oleksijson.Main</mainClass>
+                </configuration>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.oleksijson.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
