@@ -1,1 +1,3 @@
-testovyj file
+testovyj file;
+
+dodav jakyksi text i vidredahuvav mozhlyvi punktuacijni pumylky.
